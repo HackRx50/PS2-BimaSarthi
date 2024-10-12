@@ -47,7 +47,7 @@ BimaSarthi also supports regional languages  in future enhancement🌐, offers n
 ## Key Features 🔑
 - *OCR-Based Medical Diagnosis Extraction* 📝: Leverages OCR technology combined with AI models to accurately extract diagnoses from handwritten medical forms.
 - *Real-Time Feedback Loop* 🔄: The system learns from user edits, continuously improving OCR accuracy with active learning.
-- *Natural Language Summarization* 🧠: Simplifies complex medical diagnoses into layman's terms using GPT-3.5, improving user understanding.
+- *Natural Language Summarization* 🧠: Simplifies complex medical diagnoses into layman's terms using Llama-3.2-3B-Instruct, improving user understanding.
 - *Insurance Eligibility Checker* ✅: Automatically verifies if the extracted diagnosis is covered under the user’s healthcare plan, streamlining the claim process.
 - *Chatbot Integration* 💬: Provides real-time assistance and recommendations related to healthcare insurance and diagnosis.
 
@@ -56,7 +56,7 @@ BimaSarthi also supports regional languages  in future enhancement🌐, offers n
   - Vector Database (MongoDB)
 - *Backend* 🔧:
   - Torch, Transformers (AI Models)
-  - OpenAI GPT-3.5 (NLP)
+  - Llama-3.2-3B-Instruct (NLP)
   - Framework: Flask/FastAPI
 - *Frontend* 💻:
   - HTML/CSS, JavaScript
@@ -67,7 +67,8 @@ BimaSarthi also supports regional languages  in future enhancement🌐, offers n
   - Multilingual Model Support (Regional Language Support)
   - Libraries: requests, base64, io
  
-![GUI-Pixtral_OCR_DATAFLOW](https://github.com/user-attachments/assets/d423413a-9954-4dd9-ba91-e3b1c78c3f3c)
+## OCR detection model : microsoft/Florence-2-large-ft
+
 ![WhatsApp Image 2024-09-21 at 00 02 24_7a33d654](https://github.com/user-attachments/assets/00c1e1af-6f1f-4020-976e-764456b01c18)
 
 Output in csv format as well ( We have saved all 30 sample data in output.csv file present in MediMatchScan ) :
