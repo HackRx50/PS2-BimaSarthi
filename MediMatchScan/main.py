@@ -1,19 +1,21 @@
-import os
-import sys
-def process_folder(folder_path):
 import base64
-import requests
-import json
+import os
+import csv
+import time
+import uuid
+import logging
+import re
+import asyncio
 from io import BytesIO
 from PIL import Image
 from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
-import time
-import uuid
-import csv
-import os
-from openai import OpenAI
 from dotenv import load_dotenv
+import requests
+from huggingface_hub import InferenceClient
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
 
 # Load environment variables
 load_dotenv()
@@ -25,122 +27,207 @@ mongo_client = MongoClient("mongodb+srv://atharva2021:123@cluster0.so5reec.mongo
 db = mongo_client['bajaj']
 collection = db['client']
 
-# OpenAI API setup
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+# API endpoints
+OCR_API_URL = "https://real-incredibly-snapper.ngrok-free.app/api/extract_text"
 
-# Function to encode the image to base64
+# Hugging Face API setup
+HF_API_KEY = "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"
+HF_MODEL = "meta-llama/Llama-3.2-3B-Instruct"
+inference_client = InferenceClient(api_key=HF_API_KEY)
+
 def encode_image(img):
     buffered = BytesIO()
     img.save(buffered, format="PNG")
-    encoded_string = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    return encoded_string
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-# Function to save data to CSV
-def save_to_csv(filename, diagnosis):
-    csv_file = 'output.csv'
-    file_exists = os.path.isfile(csv_file)
-    
-    with open(csv_file, 'a', newline='') as file:
-        writer = csv.writer(file)
-        if not file_exists:
-            writer.writerow(['file name', 'Provisional diagnosis'])
-        writer.writerow([filename, diagnosis])
-
-# Function to extract diagnosis using GPT-3.5-turbo
-def extract_diagnosis_gpt(pixtral_response):
+def save_to_csv(filename, extracted_output, corrected_output):
     try:
-        completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a medical assistant. Extract the provisional diagnosis from the following text. Provide only the diagnosis without any additional text."},
-                {"role": "user", "content": f"Extract the provisional diagnosis from this text: {pixtral_response}"}
-            ]
-        )
-        diagnosis = completion.choices[0].message.content.strip()
-        return diagnosis if diagnosis else "No provisional diagnosis found"
+        csv_file = os.path.join(os.getcwd(), 'output.csv')  # Ensure path is correct
+        file_exists = os.path.isfile(csv_file)
+
+        with open(csv_file, 'a', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            if not file_exists:
+                writer.writerow(['file_name', 'extracted_output', 'corrected_output'])
+
+            writer.writerow([filename, extracted_output, corrected_output])
+            logging.info(f"Data successfully saved to {csv_file}: {filename}, {extracted_output}, {corrected_output}")
+
     except Exception as e:
-        print(f"Error in GPT extraction: {str(e)}")
-        return "Error in diagnosis extraction"
+        logging.error(f"Error saving to CSV: {str(e)}")
 
-# Chat function with Pixtral and MongoDB saving
-def chat_with_pixtral(base64_img, mrn_number, user_question, filename):
-    api = "https://api.hyperbolic.xyz/v1/chat/completions"
-    api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJyZzMyNzAyNEBnbWFpbC5jb20ifQ._frFve-BYZdb0Qo6FIj6xcDcxpY-6QlC2O-ToQxBjkc"
+def extract_provisional_diagnosis(text):
+    # Try to extract using regex first
+    diag_match = re.search(r'Provisional diagnosis:\s*(.*?)(?:\.|$)', text, re.IGNORECASE | re.DOTALL)
+    if diag_match:
+        return diag_match.group(1).strip()
+    
+    # If regex fails, use LLaMA to extract the diagnosis
+    prompt = f"""Extract the provisional diagnosis from the following text. If there's no clear diagnosis, respond with 'No clear diagnosis found'. Only provide the extracted diagnosis without any additional explanation.
 
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}",
-    }
+Text: {text}
 
-    payload = {
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": user_question},  
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{base64_img}"},
-                    },
-                ],
-            }
-        ],
-        "model": "mistralai/Pixtral-12B-2409",
-        "max_tokens": 2048,
-        "temperature": 0.7,
-        "top_p": 0.9,
-    }
+Extracted diagnosis:"""
 
-    response = requests.post(api, headers=headers, json=payload)
+    messages = [{"role": "user", "content": prompt}]
+    
+    try:
+        response = ""
+        for message in inference_client.chat_completion(
+            model=HF_MODEL,
+            messages=messages,
+            max_tokens=50,
+            stream=True,
+        ):
+            response += message.choices[0].delta.content or ""
+        
+        extracted_diagnosis = ' '.join(response.strip().split())
+        return extracted_diagnosis if extracted_diagnosis else "No clear diagnosis found"
+    except Exception as e:
+        logging.error(f"Error in LLaMA extraction: {str(e)}")
+        return "No clear diagnosis found"
 
-    if response.status_code == 200:
-        response_data = response.json()
-        if 'choices' in response_data:
-            assistant_response = response_data['choices'][0]['message']['content']
-            provisional_diagnosis = extract_diagnosis_gpt(assistant_response)
+def enhance_diagnosis(extracted_diagnosis):
+    prompt = f"""As a medical spell-checker and corrector, improve this diagnosis:
+
+"{extracted_diagnosis}"
+
+Guidelines:
+1. Correct all spelling errors, including medical terms.
+2. Remove any references to ICD codes or irrelevant information.
+3. Replace commonly misspelled words with their correct forms (e.g., "CASTROLS" to "CATARACT", "EYR" to "EYE", "NIVER" to "LIVER").
+4. Ensure anatomical directions are spelled correctly (e.g., "RIGHT", "LEFT").
+5. Expand abbreviations if they are clear (e.g., "RE" to "RIGHT EYE").
+6. Maintain the original structure and intent of the diagnosis.
+7. If the diagnosis is already correct, return it unchanged.
+8. Provide only the corrected diagnosis without any additional text or explanations.
+9. Do not give any additional suggetions or content just diagnosis.
+
+Corrected diagnosis:"""
+
+    messages = [{"role": "user", "content": prompt}]
+    
+    try:
+        response = ""
+        for message in inference_client.chat_completion(
+            model=HF_MODEL,
+            messages=messages,
+            max_tokens=50,
+            stream=True,
+        ):
+            response += message.choices[0].delta.content or ""
+        
+        enhanced_diagnosis = ' '.join(response.strip().split())
+        
+        if enhanced_diagnosis.lower() != extracted_diagnosis.lower():
+            logging.info(f"Diagnosis changed from '{extracted_diagnosis}' to '{enhanced_diagnosis}'")
         else:
-            assistant_response = "Response format is incorrect"
-            provisional_diagnosis = "Response format is incorrect"
-    else:
-        assistant_response = f"API request failed: {response.status_code} - {response.text}"
-        provisional_diagnosis = "API request failed"
+            logging.info(f"Diagnosis unchanged: '{extracted_diagnosis}'")
+        
+        return enhanced_diagnosis
+    except Exception as e:
+        logging.error(f"Error in enhance_diagnosis: {str(e)}")
+        return "Error: Unable to enhance diagnosis"
 
-    # Generate a unique ID for the request
-    unique_id = str(uuid.uuid4())
+def process_image(img, mrn_number, filename, save_data):
+    try:
+        img_byte_arr = BytesIO()
+        img.save(img_byte_arr, format='PNG')
+        img_byte_arr = img_byte_arr.getvalue()
 
-    # Save the result to MongoDB with the specified format
-    document = {
-        'mrn_number': mrn_number,
-        'ocr_result': assistant_response,
-        'provisional_diagnosis': provisional_diagnosis,
-        'unique_id': unique_id,
-        'got_mode': "plain texts OCR",
-        'timestamp': time.time()
-    }
+        files = {"file": ('image.png', img_byte_arr, 'image/png')}
+        logging.info(f"Sending request to OCR API: {OCR_API_URL}")
+        response = requests.post(OCR_API_URL, files=files)
+        
+        if response.status_code != 200:
+            raise Exception(f"OCR API request failed with status code {response.status_code}")
 
-    collection.insert_one(document)
+        api_result = response.json()
+        extracted_text = api_result.get('extracted_text', '')
+        extracted_diagnosis = extract_provisional_diagnosis(extracted_text)
+        corrected_diagnosis = enhance_diagnosis(extracted_diagnosis)
 
-    # Save to CSV
-    save_to_csv(filename, provisional_diagnosis)
+        # Always save to CSV
+        save_to_csv(filename, extracted_diagnosis, corrected_diagnosis)
 
-    return assistant_response, provisional_diagnosis
+        if save_data and mrn_number:
+            unique_id = str(uuid.uuid4())
+            document = {
+                'mrn_number': mrn_number,
+                'extracted_diagnosis': extracted_diagnosis,
+                'corrected_diagnosis': corrected_diagnosis,
+                'unique_id': unique_id,
+                'got_mode': "API OCR + LLaMA",
+                'timestamp': time.time()
+            }
+            result = collection.insert_one(document)
+            logging.info(f"Document inserted with ID: {result.inserted_id}")
+
+        return extracted_diagnosis, corrected_diagnosis
+    except Exception as e:
+        logging.error(f"Error in process_image: {str(e)}")
+        return "", ""
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/chat', methods=['POST'])
-def chat():
-    image = request.files['image']
-    mrn_number = request.form['mrn_number']
-    user_question = request.form['user_question']
-    filename = image.filename
+@app.route('/scan', methods=['POST'])
+def scan():
+    try:
+        image = request.files['image']
+        mrn_number = request.form.get('mrn_number', '')
+        save_data = request.form.get('save_data', 'false').lower() == 'true'
+        filename = image.filename
 
-    img = Image.open(image)
-    base64_img = encode_image(img)
+        logging.info(f"Received scan request. MRN: {mrn_number}, Save Data: {save_data}")
 
-    response, diagnosis = chat_with_pixtral(base64_img, mrn_number, user_question, filename)
-    return jsonify({'response': response, 'diagnosis': diagnosis})
+        img = Image.open(image)
+        extracted_diagnosis, corrected_diagnosis = process_image(img, mrn_number, filename, save_data)
+        
+        response = {
+            'extracted_provisional_diagnosis': extracted_diagnosis,
+            'corrected_provisional_diagnosis': corrected_diagnosis
+        }
+        
+        logging.info(f"Scan response: {response}")
+        return jsonify(response)
+    except Exception as e:
+        logging.error(f"Error in scan route: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'healthy', 'message': 'Server is running fine'})
+
+@app.route('/api/test', methods=['POST'])
+def test_api():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image file provided'}), 400
+    
+    image_file = request.files['image']
+    
+    if image_file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    
+    if image_file:
+        try:
+            # Read the image file into memory
+            img_bytes = image_file.read()
+            img = Image.open(BytesIO(img_bytes))
+            
+            # Process the image using the existing function
+            extracted_diagnosis, corrected_diagnosis = process_image(img, None, image_file.filename, False)
+            
+            response = {
+                'extracted_provisional_diagnosis': extracted_diagnosis,
+                'corrected_provisional_diagnosis': corrected_diagnosis
+            }
+            
+            return jsonify(response)
+        except Exception as e:
+            logging.error(f"Error processing image: {str(e)}")
+            return jsonify({'error': 'Error processing image'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
