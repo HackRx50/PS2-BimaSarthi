@@ -1,6 +1,7 @@
 # BimaSarthi - AI-Powered Medical Diagnosis Extraction and Insurance and medical Assistance 🏥💡
 # Hosting Link : https://bima-sarthi-home.vercel.app/
-## Hosted MediMatchScan Sample backend : https://huggingface.co/spaces/akhil2808/MongoDBpixtralOCR
+# Testing API : https://medi-match-scan.vercel.app/api/test
+
 
 ![MediMatchBot 1](https://github.com/user-attachments/assets/e6307b89-002f-4ec1-bd1f-9fc0b3eef6ab)
 
