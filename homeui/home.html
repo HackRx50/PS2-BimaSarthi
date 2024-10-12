@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediMatch Pro</title>
+    <link rel="stylesheet" href="home.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <img src="homeui/images/bajajlogo.png" alt="logo">
+            </div>
+            <div class="menu-toggle" id="mobile-menu">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+            <div class="nav-wrapper">
+                <ul class="nav-links">
+                    <li><a href="homeui/images/iconhome.png"><i class="fas fa-home"></i><span>Home</span></a></li>
+                    <li><a href="homeui/images/ocricon.png"><i class="fas fa-search"></i><span>MediMatchScan</span></a></li>
+                    <li><a href="homeui/images/icon1bot.png"><i class="fas fa-robot"></i><span>MediMatchBot</span></a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+    <main>
+        <section class="hero">
+            <div class="hero-content">
+                <h3 class="typewriter">Looking for a quick provisional diagnosis?</h3>
+                <p class="quote">
+                    Hey there! I'm MediMatch Pro – I swiftly extract diagnoses with MediMatch Scan, offer help through MediMatch Bot, and check your insurance eligibility in seconds! Let's get started!
+                </p>
+            </div>
+            <div class="hero-image">
+                <img src="homeui/images/main.png" alt="Thumbs Up">
+            </div>
+        </section>
+        <div class="features">
+            <div class="feature">
+                <img src="homeui/images/ocr.png" alt="MediMatch Scan" class="feature-image">
+                <div class="feature-content">
+                    <h3>✨ MediMatch Scan</h3>
+                    <p>I'll quickly extract and summarize your diagnoses!</p>
+                </div>
+            </div>
+            
+            <div class="feature">
+                <img src="homeui/images/bot.png" alt="MediMatch Bot" class="feature-image">
+                <div class="feature-content">
+                    <h3>💬 MediMatch Bot</h3>
+                    <p>Need assistance? Just ask me anything in real-time!</p>
+                </div>
+            </div>
+            
+            <div class="feature">
+                <img src="homeui/images/check.png" alt="Eligibility Checker" class="feature-image">
+                <div class="feature-content">
+                    <h3>✅ Eligibility Checker</h3>
+                    <p>Let's see if your diagnoses are covered by your insurance!</p>
+                </div>
+            </div>
+        </div>
+        <section class="faq">
+            <h2>Frequently Asked Questions</h2>
+            <div class="faq-item">
+                <h3>What is MediMatch Pro?</h3>
+                <p>MediMatch Pro is an AI-powered platform that helps with quick provisional diagnoses, medical assistance, and insurance eligibility checks.</p>
+            </div>
+            <div class="faq-item">
+                <h3>How does MediMatch Scan work?</h3>
+                <p>MediMatch Scan uses advanced OCR technology to extract and summarize diagnoses from medical documents you upload.</p>
+            </div>
+            <div class="faq-item">
+                <h3>Is my data secure with MediMatch Pro?</h3>
+                <p>Yes, we take data security very seriously. All your information is encrypted and stored securely in compliance with healthcare data protection regulations.</p>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; Bajaj Finserv 2007-2024. All rights reserved.</p>
+        <p>Follow us on Linkedin: <a href="https://www.linkedin.com/company/bajaj-finserv-lending" target="_blank">@bajajfinserv</a></p>
+    </footer>
+    <script>
+   document.addEventListener('DOMContentLoaded', function() {
+    const mobileMenu = document.getElementById('mobile-menu');
+    const navWrapper = document.querySelector('.nav-wrapper');
+
+    mobileMenu.addEventListener('click', function() {
+        this.classList.toggle('active');
+        navWrapper.classList.toggle('active');
+    });
+});
+    </script>
+</body>
+</html>
