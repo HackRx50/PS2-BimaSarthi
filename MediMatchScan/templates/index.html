@@ -3,30 +3,520 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pixtral Image Chat</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>MediMatch Scanner</title>
 </head>
+<style>
+    * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f6f6f6;
+    color: #333;
+}
+
+header {
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    width: 100%;
+    top: 0;
+    z-index: 1000;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 5%;
+    flex-wrap: wrap;
+}
+
+.logo img {
+    height: 50px;
+    width: auto;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+}
+
+.nav-links li a {
+    text-decoration: none;
+    color: #110057;
+    font-weight: 500;
+    font-size: 18px;
+    transition: color 0.3s ease;
+}
+
+.nav-links li a:hover {
+    color: #f0b000;
+}
+
+.get-started {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-weight: 500;
+}
+
+.get-started:hover {
+    background-color: #0056b3;
+}
+
+.menu-toggle {
+    display: none;
+    cursor: pointer;
+    font-size: 24px;
+}
+
+@media (max-width: 768px) {
+    nav {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .nav-links {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .nav-links.active {
+        display: flex;
+    }
+
+    .get-started {
+        margin-top: 15px;
+    }
+
+    .menu-toggle {
+        display: block;
+        position: absolute;
+        right: 5%;
+        top: 15px;
+    }
+}
+
+.main-content {
+    display: flex;
+    padding-top: 100px;
+    min-height: calc(100vh - 100px);
+}
+
+.left-column, .right-column {
+    flex: 1;
+    padding: 40px;
+}
+
+.left-column {
+    background-color: rgb(255, 255, 255);
+    box-shadow: 0 3px 7px rgba(196, 101, 255, 0.454);
+}
+
+.right-column {
+    background-color: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+}
+
+.code-editor {
+    flex-grow: 1;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    min-height: 400px;
+}
+
+.editor-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+
+h1 {
+    font-size: 28px;
+    color: #4a249d;
+    margin-bottom: 20px;
+}
+
+p {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #4a249d;
+}
+
+.form-group input[type="file"],
+.form-group input[type="text"],
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="file"]:focus {
+    outline: none;
+    border-color: #4a249d;
+}
+
+.mrn-group {
+    display: flex;
+    gap: 10px;
+}
+
+.mrn-group input[type="text"] {
+    flex-grow: 1;
+}
+
+.btn {
+    background-color: #4a249d;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+#copyBtn {
+    background-color: #23c931;
+}
+
+#copyBtn:hover {
+    background-color: #056d00;
+}
+
+.btn:hover {
+    background-color: #3a1e82;
+}
+
+.submit-btn {
+    width: 100%;
+    margin-top: 20px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 400px;
+    border-radius: 10px;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+    }
+
+    .left-column, .right-column {
+        width: 100%;
+    }
+}
+
+.consent-group {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.consent-group input[type="checkbox"] {
+    margin-right: 10px;
+    margin-top: 5px;
+}
+
+.consent-group label {
+    font-size: 12px;
+    line-height: 1.4;
+    color: #666;
+}
+
+.format-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-bottom: 10px;
+}
+
+.format-toggle span {
+    margin: 0 10px;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 80px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: #4a249d;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #9462ff;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+</style>
 <body>
-    <div class="container">
-        <h1>BimaSarthi</h1>
-        <p>Upload your Image, enter MRN number, and get insights out of the Image</p>
-        <form id="chatForm">
-            <div class="form-group">
-                <label for="imageUpload">Upload Your Image</label>
-                <input type="file" id="imageUpload" name="image" accept="image/*" required>
+    <header>
+        <nav>
+            <div class="logo">
+                <img src="bajajlogo.png" alt="Bajaj Logo">
             </div>
-            <div class="form-group">
-                <label for="mrnNumber">Enter MRN Number</label>
-                <input type="text" id="mrnNumber" name="mrn_number" required>
+            <ul class="nav-links">
+                <li><a href="#">Home</a></li>
+                <li><a href="#" class="active">MediMatchScan</a></li>
+                <li><a href="#">MediMatchBot</a></li>
+            </ul>
+            <div class="menu-toggle">☰</div>
+        </nav>
+    </header>
+
+    <div class="main-content">
+        <div class="left-column">
+            <div class="box">
+                <h1>MediMatch Scanner</h1>
+                <p>Add your image, input MRN, and get instant insights.</p>
+                <form id="scanForm">
+                    <div class="form-group">
+                        <label for="image">Upload Your Image</label>
+                        <input type="file" id="image" name="image" accept="image/*" required>
+                    </div>
+                    <div class="form-group mrn-group">
+                        <label for="mrn">Enter MRN Number (Optional)</label>
+                        <input type="text" id="mrn" name="mrn_number">
+                    </div>
+                    <div class="form-group consent-group">
+                        <input type="checkbox" id="consent" name="save_data" value="true">
+                        <label for="consent">
+                            By entering your Medical Record Number (MRN), you acknowledge and consent to the collection and storage of any OCR (Optical Character Recognition) data associated with your input. This data will be securely handled in accordance with our privacy policy and used only for the purposes outlined. If you do not wish to provide consent, please refrain from entering your MRN.
+                        </label>
+                    </div>
+                    <button type="submit" class="btn submit-btn">Submit</button>
+                </form>
             </div>
-            <div class="form-group">
-                <label for="userQuestion">Please enter your question</label>
-                <textarea id="userQuestion" name="user_question" required></textarea>
+        </div>
+        <div class="right-column">
+            <div class="format-toggle">
+                <span>JSON</span>
+                <label class="switch">
+                    <input type="checkbox" id="formatToggle">
+                    <span class="slider round"></span>
+                </label>
+                <span>TXT</span>
             </div>
-            <button type="submit">Submit</button>
-        </form>
-        <div id="result" class="result"></div>
+            <div id="code-editor" class="code-editor"></div>
+            <div class="editor-actions">
+                <button id="copyBtn" class="btn">Copy</button>
+                <button id="emailBtn" class="btn">E-Mail</button>
+            </div>
+        </div>
     </div>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+    <div id="emailModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Enter Your Email</h2>
+            <input type="email" id="emailInput" placeholder="Your email address">
+            <button id="sendEmailBtn" class="btn">Send</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const editor = ace.edit("code-editor");
+            editor.setTheme("ace/theme/monokai");
+            editor.session.setMode("ace/mode/json");
+            editor.setReadOnly(true);
+    
+            const formatToggle = document.getElementById('formatToggle');
+            const scanForm = document.getElementById('scanForm');
+            const copyBtn = document.getElementById('copyBtn');
+            const emailBtn = document.getElementById('emailBtn');
+            const emailModal = document.getElementById('emailModal');
+            const closeModal = document.querySelector('.close');
+            const sendEmailBtn = document.getElementById('sendEmailBtn');
+            const mrnInput = document.getElementById('mrn');
+            const consentCheckbox = document.getElementById('consent');
+    
+            let scanResult = null;
+    
+            function displayResult(data) {
+                scanResult = data;
+                if (formatToggle.checked) {
+                    editor.setValue(Object.entries(data).map(([key, value]) => `${key}: ${value}`).join('\n'), -1);
+                } else {
+                    editor.setValue(JSON.stringify(data, null, 2), -1);
+                }
+            }
+    
+            formatToggle.addEventListener('change', function() {
+                if (scanResult) {
+                    displayResult(scanResult);
+                }
+            });
+    
+            scanForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                
+                if (mrnInput.value && !consentCheckbox.checked) {
+                    alert("Please check the consent box if you want to save your data to the database.");
+                    return;
+                }
+    
+                // Always set save_data to true to ensure CSV saving
+                formData.set('save_data', 'true');
+    
+                fetch('/scan', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Received data:', data);  // Add this line for debugging
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    displayResult(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    editor.setValue('An error occurred while processing your request: ' + error.message, -1);
+                });
+            });
+    
+            copyBtn.addEventListener('click', function() {
+                const content = editor.getValue();
+                navigator.clipboard.writeText(content).then(() => {
+                    alert('Content copied to clipboard!');
+                });
+            });
+    
+            emailBtn.addEventListener('click', function() {
+                emailModal.style.display = "block";
+            });
+    
+            closeModal.addEventListener('click', function() {
+                emailModal.style.display = "none";
+            });
+    
+            window.addEventListener('click', function(event) {
+                if (event.target == emailModal) {
+                    emailModal.style.display = "none";
+                }
+            });
+    
+            sendEmailBtn.addEventListener('click', function() {
+                const email = document.getElementById('emailInput').value;
+                const content = editor.getValue();
+                // Here you would typically send this to your server to handle email sending
+                console.log(`Sending email to ${email} with content: ${content}`);
+                alert('Email sent successfully!');
+                emailModal.style.display = "none";
+            });
+    
+            mrnInput.addEventListener('input', function() {
+                if (this.value) {
+                    consentCheckbox.disabled = false;
+                } else {
+                    consentCheckbox.disabled = true;
+                    consentCheckbox.checked = false;
+                }
+            });
+        });
+    </script>
 </body>
 </html>
