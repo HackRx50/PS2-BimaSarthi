@@ -26,6 +26,8 @@ except ValueError:
     print(response.text)  # Print the raw response text if JSON decoding fails
 ```
 
+![image](https://github.com/user-attachments/assets/c38eba1b-abb4-4bc2-ada7-8824663f61f7)
+
 
 ![MediMatchBot 1](https://github.com/user-attachments/assets/e6307b89-002f-4ec1-bd1f-9fc0b3eef6ab)
 
