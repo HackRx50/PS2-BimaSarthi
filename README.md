@@ -2,11 +2,14 @@
 # Hosting Link : https://bima-sarthi-home.vercel.app/
 # Testing API : https://medi-match-scan.vercel.app/api/test
 
-"""
+This example demonstrates how to send an image to the hosted API using Python's `requests` library.
+
+```python
 import requests
 
 # Define the hosted API endpoint
 url = "https://medi-match-scan.vercel.app/api/test"
+
 # Path to the image you want to test with
 image_path = "C:/Users/Asus/Desktop/apitestbimasarthi/image/sample_1.png"
 
@@ -21,8 +24,7 @@ try:
 except ValueError:
     print("Response is not in JSON format. Here is the raw response:")
     print(response.text)  # Print the raw response text if JSON decoding fails
-
-"""
+```
 
 
 ![MediMatchBot 1](https://github.com/user-attachments/assets/e6307b89-002f-4ec1-bd1f-9fc0b3eef6ab)
